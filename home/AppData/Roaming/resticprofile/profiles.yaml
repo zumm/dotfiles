@@ -1,0 +1,133 @@
+# yaml-language-server: $schema=https://creativeprojects.github.io/resticprofile/jsonschema/config.json
+version: 2
+
+{{ $sourceBase := .Env.USERPROFILE }}
+
+global:
+  shell: powershell
+
+  schedule-defaults:
+    priority: background
+    permission: user_logged_on
+    hide-window: true
+
+# hack to compose profiles
+templates:
+  .monitoring: &monitoring
+    send-before:
+      method: HEAD
+      url: ${MONITOR_URL}/${PROFILE_NAME}-${PROFILE_COMMAND}?state=run
+
+    send-after:
+      method: HEAD
+      url: ${MONITOR_URL}/${PROFILE_NAME}-${PROFILE_COMMAND}?state=complete
+
+    send-after-fail:
+      method: HEAD
+      url: ${MONITOR_URL}/${PROFILE_NAME}-${PROFILE_COMMAND}?state=fail&status_code=${ERROR_EXIT_CODE}&message=${ERROR_STDERR}
+
+  .steam-guard: &steam-guard
+    # abort if any steam game is running
+    - exit [bool](Get-ItemProperty -Path HKCU:\Software\Valve\Steam -ErrorAction SilentlyContinue).RunningAppID
+ 
+  .backup: &backup
+    <<: *monitoring
+
+    source-base: {{ $sourceBase }}
+    source-relative: true
+
+    skip-if-unchanged: true
+    use-fs-snapshot: true
+    schedule-run-level: highest
+
+    exclude-caches: true
+
+    schedule: "*-*-* 12:00:00"
+
+  .forget: &forget
+    <<: *monitoring
+
+    keep-daily: 7
+    keep-monthly: 12
+
+    schedule: "*-*-* 00:00:00"
+
+    prune: true
+
+profiles:
+  private:
+    varbose: true
+    repository: rclone:gdrive:/restic/private
+    
+    env-file: .env
+
+    run-before: *steam-guard
+
+    backup:
+      <<: *backup
+      source:
+        - projects
+        - Documents/_
+        - Pictures/_
+
+      exclude-file: excludes.txt
+
+    forget: *forget
+
+    restore:
+      target: {{ $sourceBase }}
+
+      include:
+        - projects
+        - Documents/_
+        - Pictures/_
+
+      # TODO: remove when resolved
+      # https://github.com/restic/restic/issues/3572
+      run-after:
+        - takeown /r /f "{{ $sourceBase }}\projects"
+        - icacls "{{ $sourceBase }}\projects" /t /q /reset
+
+        - takeown /f "{{ $sourceBase }}\Documents"
+        - icacls "{{ $sourceBase }}\Documents" /q /reset
+        - takeown /r /f "{{ $sourceBase }}\Documents\_"
+        - icacls "{{ $sourceBase }}\Documents\_" /t /q /reset
+
+        - takeown /f "{{ $sourceBase }}\Pictures"
+        - icacls "{{ $sourceBase }}\Pictures" /q /reset
+        - takeown /r /f "{{ $sourceBase }}\Pictures\_"
+        - icacls "{{ $sourceBase }}\Pictures\_" /t /q /reset
+
+  public:
+    varbose: true
+    repository: rclone:gdrive:/restic/public
+    insecure-no-password: true
+
+    env-file: .env
+    env:
+      RESTIC_PASSWORD:
+
+    run-before: *steam-guard
+
+    backup:
+      <<: *backup
+      source:
+        - public
+
+      run-after:
+        # copy data to gdrive to make it accessible without restic
+        - rclone sync "{{ $sourceBase }}/public" gdrive:public -vv
+
+    forget: *forget
+
+    restore:
+      target: {{ $sourceBase }}
+
+      include:
+        - public
+
+      # TODO: remove when resolved
+      # https://github.com/restic/restic/issues/3572
+      run-after:
+        - takeown /r /f "{{ $sourceBase }}\public"
+        - icacls "{{ $sourceBase }}\public" /t /q /reset

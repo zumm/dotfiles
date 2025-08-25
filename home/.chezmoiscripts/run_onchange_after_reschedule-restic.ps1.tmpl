@@ -1,0 +1,8 @@
+# config hash:
+# {{ include "AppData/Roaming/resticprofile/profiles.yaml" | sha256sum }}
+
+# TODO: remove when resticprofile 0.32.0 released
+$resticprofile = "~/bin/resticprofile_0.32.0rc.exe"
+
+& $resticprofile unschedule --all
+& $resticprofile schedule --all

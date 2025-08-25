@@ -1,0 +1,11 @@
+node_modules/
+.venv/
+__pycache__/
+
+projects/**/wheels/
+projects/**/build/
+projects/**/dist/
+projects/**/distribution/
+projects/**/.nuxt/
+projects/**/.output/
+projects/**/cmake-build*/

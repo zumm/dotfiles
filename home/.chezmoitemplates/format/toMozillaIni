@@ -1,0 +1,8 @@
+{{- /* Formats the pipeline to INI suitable for Mozilla *.ini files */ -}}
+
+{{- range $section, $values := . }}
+[{{ $section }}]
+{{-   range $key, $value := $values }}
+{{ $key }}={{ $value -}}
+{{-   end }}
+{{ end }}

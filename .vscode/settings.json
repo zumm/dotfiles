@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    // FIXME: workaround for https://github.com/SagerNet/sing-box/issues/3192
+    "**/sing-box/*.json": "jsonc"
+  }
+}

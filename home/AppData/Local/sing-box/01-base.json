@@ -1,0 +1,132 @@
+{
+  "log": {
+    "level": "warn",
+    "timestamp": true
+  },
+  // all dns going through proxy
+  "dns": {
+    "servers": [
+      {
+        "tag": "google",
+        // dot instead of doh for better performance
+        "address": "tls://8.8.8.8",
+        "detour": "proxy"
+      },
+      {
+        "tag": "fakeip",
+        "address": "fakeip"
+      }
+    ],
+    "rules": [
+      // we want to use fakeip dns for all domain queries
+      // not sure if checking query_type is best approach
+      {
+        "query_type": [
+          "A",
+          "AAAA"
+        ],
+        "server": "fakeip"
+      }
+    ],
+    "final": "google",
+    // using fakeip dns instead of sniffing to detect domains
+    // this approach prevents leaks during domain-based routing
+    "fakeip": {
+      "enabled": true,
+      "inet4_range": "198.18.0.0/15",
+      "inet6_range": "fc00::/18"
+    },
+    // not sure if it's really needed
+    // but seems resonable with fakeip dns
+    "independent_cache": true
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "interface_name": "sb-tun",
+      "address": [
+        "172.19.0.1/30",
+        "fdfe:dcba:9876::1/126"
+      ],
+      "auto_route": true,
+      "strict_route": true
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
+    // proxy outbound shall be merged from 02-proxy-outbound.json
+  ],
+  "route": {
+    "rule_set": [
+      {
+        "type": "remote",
+        "tag": "russia-inside",
+        "format": "binary",
+        "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/russia_inside.srs",
+        "download_detour": "proxy"
+      },
+      // this rule set contains discord udp subnets required for voice chats
+      // it also contains discord domains same as rule set "russia-inside"
+      // so there may be some overhead
+      {
+        "type": "remote",
+        "tag": "discord",
+        "format": "binary",
+        "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/discord.srs",
+        "download_detour": "proxy"
+      }
+    ],
+    "rules": [
+      {
+        "clash_mode": "Direct",
+        "outbound": "direct"
+      },
+      // since sniffing is off we using simple dns detection
+      // this means only plain dns should be used in browser, no fancy doh or dot
+      {
+        "network": "udp",
+        "port": 53,
+        "action": "hijack-dns"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "direct"
+      },
+      {
+        "clash_mode": "Global",
+        "outbound": "proxy"
+      },
+      // no heavy rule set matching for other processes
+      {
+        "process_name": [
+          "Discord.exe",
+          "firefox.exe"
+        ],
+        "invert": true,
+        "outbound": "direct"
+      },
+      {
+        "rule_set": [
+          "russia-inside",
+          "discord"
+        ],
+        "outbound": "proxy"
+      }
+    ],
+    "final": "direct",
+    "auto_detect_interface": true
+  },
+  "experimental": {
+    // not sure if it's really needed
+    "cache_file": {
+      "enabled": true
+    },
+    // dashboard at yacd.metacubex.one
+    "clash_api": {
+      "external_controller": "127.0.0.1:9090"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{{ includeTemplate "ensure-elevation.ps1" }}
+
+# config hash:
+{{ $configFiles := joinPath .chezmoi.sourceDir "AppData/Local/sing-box/*.json{,.age}" | glob -}}
+{{- range $file := $configFiles -}}
+# {{ include $file | sha256sum }}
+{{ end }}
+
+Restart-Service -Name "sing-box"

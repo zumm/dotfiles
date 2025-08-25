@@ -1,0 +1,11 @@
+[core]
+autocrlf = false
+eol = lf
+editor = code --wait
+
+[init]
+defaultbranch = main
+
+[user]
+name = zumm
+email = jan.plys@gmail.com

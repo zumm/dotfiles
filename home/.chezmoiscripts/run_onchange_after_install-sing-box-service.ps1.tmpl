@@ -1,0 +1,26 @@
+$Status = (Get-Service -Name "sing-box" -ErrorAction SilentlyContinue).Status
+if ($Status -eq "Running") { 
+  exit
+}
+
+{{ includeTemplate "ensure-elevation.ps1" }}
+
+if ($Status -eq "Stopped") {
+  Start-Service -Name "sing-box" 
+  exit
+}
+
+$ShawlPath = $(Get-Command shawl).Source
+$SbPath = $(Get-Command sing-box).Source
+$SbConfigPath = "$Env:LOCALAPPDATA/sing-box"
+
+$Binary = "$ShawlPath run --log-dir $SbConfigPath --cwd $SbConfigPath --name sing-box -- $SbPath run -C . --disable-color"
+
+$Params = @{
+  Name = "sing-box"
+  BinaryPathName = $Binary
+  StartupType = "Automatic"
+  Description = "The universal proxy platform."
+}
+New-Service @Params | Out-Null
+Start-Service -Name "sing-box"
