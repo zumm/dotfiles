@@ -15,14 +15,14 @@ This is repo for my personal settings of various Windows apps and Windows itself
 # Quick start
 This guide assumes that you have `winget` installed.
 
-1. Run setup script *as admin*
+1. Run setup script **as admin**
 > irm https://raw.githubusercontent.com/zumm/dotfiles/refs/heads/main/setup.ps1 | iex
 
 It will install chezmoi, apps required by chezmoi, and all apps managed by this repo. Also it will configure Windows as follows:
 - Enable `sudo`
 - Enable `ssh-agent`
 - Disable app capture feature
-- *Disable Windows Defender*
+- **Disable Windows Defender**
 
 2. Apply settings
 > chezmoi init --apply git@github.com:zumm/dotfiles.git
@@ -30,7 +30,7 @@ It will install chezmoi, apps required by chezmoi, and all apps managed by this 
 # Secret Managment
 Ideally secrets should be managed by KeePassXC. But at this moment `keepassxc-cli` lacks [kee feature](https://github.com/keepassxreboot/keepassxc/issues/12282) to make it possible in sane way. When this feature is released i plan to switch to KeePassXC managment.
 
-Until then all secrets are stored in age enrypted files in repo.
+Until then all secrets are stored in age encrypted files in repo.
 
 # Cavets
 ## Firefox
